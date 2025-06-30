@@ -9,11 +9,8 @@ const createAllowedEmailSchema = z.object({
   email: z.string().email(),
 });
 
-const admin = new Hono();
-
-// Protect every POST to /api/admin/users with HTTP Basic Auth
-admin.post(
-  "/",
+const app = new Hono().post(
+  "/users",
   basicAuth({
     username: process.env.ADMIN_USER!,
     password: process.env.ADMIN_PASS!,
@@ -52,4 +49,4 @@ admin.post(
   }
 );
 
-export default admin;
+export default app;

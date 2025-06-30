@@ -1,18 +1,23 @@
-// index.ts
+// src/app/api/[[...route]]/route.ts
 import { Hono } from "hono";
-import authors from "./authors";
-import books from "./books";
-import adminUsers from "./admin/users";
 import { handle } from "hono/vercel";
 
-const app = new Hono().basePath("/api");
+import authors from "./authors";
+import books from "./books";
+import admin from "./admin";
+import auth from "./auth";
 
-app
+export const runtime = "nodejs"; // so mongoose works, etc.
+
+export const app = new Hono()
+  .basePath("/api")
   .route("/authors", authors)
   .route("/books", books)
-  .route("/admin/users", adminUsers);
+  .route("/auth", auth)
+  .route("/admin", admin);
 
 export const GET = handle(app);
 export const POST = handle(app);
 
+// This is the type you’ll pass to `hc<AppType>(…)`
 export type AppType = typeof app;
