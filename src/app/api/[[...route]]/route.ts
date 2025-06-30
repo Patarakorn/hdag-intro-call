@@ -2,13 +2,15 @@
 import { Hono } from "hono";
 import authors from "./authors";
 import books from "./books";
+import adminUsers from "./admin/users";
 import { handle } from "hono/vercel";
-
-export const runtime = "edge";
 
 const app = new Hono().basePath("/api");
 
-app.route("/authors", authors).route("/books", books);
+app
+  .route("/authors", authors)
+  .route("/books", books)
+  .route("/admin/users", adminUsers);
 
 export const GET = handle(app);
 export const POST = handle(app);
