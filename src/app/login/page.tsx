@@ -23,12 +23,15 @@ export default function LoginPage() {
     <div className="grid min-h-svh lg:grid-cols-2 bg-black text-white dark:bg-black dark:text-white">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-purple-600 text-white flex size-8 items-center justify-center rounded-md">
-              <PhoneOutgoing className="size-6" />
+          <div className="flex items-center gap-3">
+            <div className="bg-purple-600 rounded-lg p-2">
+              <PhoneOutgoing className="h-6 w-6 text-white" />
             </div>
-            <span>HDAG Intro Call</span>
-          </a>
+            <div>
+              <h1 className="text-2xl font-bold text-white">HDAG Intro Call</h1>
+              <p className="text-zinc-400">Harvard Undergraduate Data Analytics Club Research Tool</p>
+            </div>
+          </div>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -45,7 +48,14 @@ export default function LoginPage() {
           style={{ objectFit: "cover" }}
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/60 via-transparent to-purple-800/40 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(124,58,237,0.85) 0%, rgba(168,85,247,0.7) 30%, rgba(239,68,68,0.5) 55%, rgba(234,88,12,0.5) 75%, rgba(124,58,237,0.7) 100%)',
+            filter: 'blur(10px) saturate(1.2) drop-shadow(0 0 40px rgba(168,85,247,0.3))',
+            mixBlendMode: 'screen',
+          }}
+        />
         <div className="absolute inset-0 pointer-events-none" style={{background: 'radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%)'}} />
       </div>
     </div>

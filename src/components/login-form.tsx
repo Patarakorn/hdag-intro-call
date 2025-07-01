@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "@/lib/api/auth";
+import { LogIn } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -39,7 +40,7 @@ export function LoginForm({
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Login to your account</h1>
         <p className="text-muted-foreground text-sm">
-          Enter your email below to login to your account
+          Enter your approved email below to login
         </p>
       </div>
 
@@ -50,7 +51,7 @@ export function LoginForm({
           <Input
             id="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder="e.g. jerryhuang@college.harvard.edu"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -65,8 +66,22 @@ export function LoginForm({
         )}
 
         {/* Submit button */}
-        <Button type="submit" className="w-full" disabled={login.isPending}>
-          {login.isPending ? "Logging in…" : "Login"}
+        <Button
+          type="submit"
+          className="w-full border bg-purple-900/30 border-purple-600 text-white hover:bg-purple-700/40 hover: hover:border-purple-400 transition-colors flex items-center justify-center gap-2 font-semibold py-3 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={login.isPending}
+        >
+          {login.isPending ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              <span>Logging in…</span>
+            </>
+          ) : (
+            <>
+              <LogIn className="h-5 w-5" />
+              <span>Login</span>
+            </>
+          )}
         </Button>
       </div>
     </form>
