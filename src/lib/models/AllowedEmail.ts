@@ -6,4 +6,5 @@ const AllowedEmailSchema = new mongoose.Schema({
   invitedAt: { type: Date, default: Date.now },
 });
 
-export const AllowedEmail = mongoose.model("AllowedEmail", AllowedEmailSchema);
+export const AllowedEmail =
+  mongoose.models.AllowedEmail || mongoose.model("AllowedEmail", AllowedEmailSchema);

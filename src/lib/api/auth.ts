@@ -30,6 +30,9 @@ export function useMe() {
     queryKey: ["me"],
     queryFn: async () => {
       const response = await client.api.auth.me.$get();
+      if (!response.ok) {
+        throw new Error("Unauthorized");
+      }
       const data = await response.json();
       return data as MeRes;
     },
