@@ -4,6 +4,8 @@ import { CompanySearch } from "@/components/CompanySearch";
 import { CompanyResults } from "@/components/CompanyResults";
 import { Building2, TrendingUp, Database, LogOut, MessageCircle, PhoneOutgoing } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLogout } from "@/lib/api/auth";
+import { useRouter } from "next/navigation";
 
 interface CompanyInfo {
   name: string;
@@ -34,6 +36,8 @@ export default function HomeClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<CompanyResultsData | null>(null);
   const [showRAGChat, setShowRAGChat] = useState(false);
+  const logout = useLogout();
+  const router = useRouter();
 
   const handleSearch = async (companyName: string) => {
     setIsLoading(true);
@@ -83,10 +87,13 @@ export default function HomeClient() {
     }, 1500);
   };
 
-  const handleSignOut = () => {
-    // Simulate sign out - replace with actual authentication logic
-    console.log("User signed out");
-    // You would typically clear user session, tokens, etc.
+  const handleSignOut = async () => {
+    try {
+      await logout.mutateAsync();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

@@ -8,6 +8,8 @@ type LoginRes = InferResponseType<typeof client.api.auth.login.$post>;
 
 type MeRes = InferResponseType<typeof client.api.auth.me.$get>;
 
+type LogoutRes = InferResponseType<typeof client.api.auth.logout.$post>;
+
 // POST /api/auth/login
 export function useLogin() {
   return useMutation<LoginRes, Error, LoginReq>({
@@ -37,5 +39,22 @@ export function useMe() {
       return data as MeRes;
     },
     retry: false,
+  });
+}
+
+// POST /api/auth/logout
+export function useLogout() {
+  return useMutation<LogoutRes, Error>({
+    mutationFn: async () => {
+      const response = await client.api.auth.logout.$post();
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+      const data = await response.json();
+      return data as LogoutRes;
+    },
+    onError: (err) => {
+      console.error("Logout error:", err);
+    },
   });
 }
