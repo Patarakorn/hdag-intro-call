@@ -35,7 +35,6 @@ export default function HomeClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<CompanyResultsData | null>(null);
-  const [showRAGChat, setShowRAGChat] = useState(false);
   const logout = useLogout();
   const router = useRouter();
 
@@ -113,12 +112,12 @@ export default function HomeClient() {
             </div>
             <div className="flex items-center gap-4">
               <Button
-                onClick={() => setShowRAGChat(!showRAGChat)}
+                onClick={() => router.push("/chat")}
                 variant="outline"
                 className="bg-purple-900/30 border-purple-600 text-purple-300 hover:bg-purple-700/40 hover:text-white hover:border-purple-400 transition-colors"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
-                {showRAGChat ? "Hide Chat" : "Ask Questions"}
+                Ask Questions
               </Button>
               <Button
                 onClick={handleSignOut}
@@ -134,9 +133,9 @@ export default function HomeClient() {
       </header>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Main Search Area */}
-          <div className={`${showRAGChat ? "lg:col-span-3" : "lg:col-span-4"}`}>
+          <div className="lg:col-span-4">
             {/* Hero Section */}
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold text-white mb-4">
@@ -175,15 +174,6 @@ export default function HomeClient() {
               />
             )}
           </div>
-          {/* RAG Chat Sidebar Placeholder */}
-          {showRAGChat && (
-            <div className="lg:col-span-1 flex flex-col">
-              {/* <RAGChat searchResults={searchResults} /> */}
-              <div className="bg-zinc-900/80 rounded-xl p-6 text-zinc-400 border border-zinc-800 flex-1 flex items-center justify-center">
-                <span>RAGChat coming soon…</span>
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </div>
