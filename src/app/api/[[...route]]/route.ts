@@ -9,7 +9,7 @@ import auth from "./auth";
 
 export const runtime = "nodejs"; // so mongoose works, etc.
 
-export const app = new Hono()
+const app = new Hono()
   .basePath("/api")
   .route("/authors", authors)
   .route("/books", books)

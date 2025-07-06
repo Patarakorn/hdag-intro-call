@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { CompanySearch } from "@/components/CompanySearch";
 import { CompanyResults } from "@/components/CompanyResults";
-import { Building2, TrendingUp, Database, LogOut, MessageCircle, PhoneOutgoing } from "lucide-react";
+import { Building2, TrendingUp, Database, LogOut, MessageCircle, PhoneOutgoing, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLogout } from "@/lib/api/auth";
+import { useLogout, useMe } from "@/lib/api/auth";
 import { useRouter } from "next/navigation";
 
 interface CompanyInfo {
@@ -37,6 +37,10 @@ export default function HomeClient() {
   const [searchResults, setSearchResults] = useState<CompanyResultsData | null>(null);
   const logout = useLogout();
   const router = useRouter();
+  const { data: me } = useMe();
+  
+  // Type the response properly to avoid explicit any
+  const isAdmin = me?.ok && (me as { user: { email: string } })?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   const handleSearch = async (companyName: string) => {
     setIsLoading(true);
@@ -119,6 +123,16 @@ export default function HomeClient() {
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Ask Questions
               </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => router.push("/admin")}
+                  variant="outline"
+                  className="bg-zinc-800/50 border-zinc-600 text-zinc-300 hover:bg-zinc-600/70 hover:text-white hover:border-zinc-400 transition-colors"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Admin Panel
+                </Button>
+              )}
               <Button
                 onClick={handleSignOut}
                 variant="outline"
