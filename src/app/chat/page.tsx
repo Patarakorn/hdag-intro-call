@@ -182,14 +182,14 @@ const RAGChatPage = () => {
 
             {/* Quick Questions */}
             {messages.length === 1 && (
-              <div className="p-6 border-t border-zinc-800 flex-shrink-0">
-                <p className="text-sm text-zinc-500 mb-3">Try asking:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="px-6 py-3 border-t border-zinc-800 flex-shrink-0">
+                <p className="text-xs text-zinc-500 mb-2">Try asking:</p>
+                <div className="flex flex-wrap gap-1">
                   {quickQuestions.map((question, index) => (
                     <button
                       key={index}
                       onClick={() => setInputValue(question)}
-                      className="text-left text-sm bg-zinc-800/50 hover:bg-purple-900/30 text-zinc-400 hover:text-purple-300 px-3 py-2 rounded transition-colors"
+                      className="text-left text-xs bg-zinc-800/30 hover:bg-purple-900/20 text-zinc-400 hover:text-purple-300 px-2 py-1 rounded transition-colors"
                     >
                       {question}
                     </button>
