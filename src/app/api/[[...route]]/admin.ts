@@ -1,9 +1,12 @@
-// src/app/api/[[...route]]/admin/users/route.ts
+// src/app/api/[[...route]]/admin.ts
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { AllowedEmail } from "@/lib/models/AllowedEmail";
 import { requireAuth, isAdmin } from "@/lib/middleware/requireAuth";
+import { CaseDocument } from "@/lib/models/CaseDocument";
+import pdfParse from "pdf-parse";
+import { ObjectId } from "mongodb";
 
 const createAllowedEmailSchema = z.object({
   email: z.string().email(),
@@ -62,6 +65,56 @@ const app = new Hono()
       return c.json({ ok: false, error: "Email not found" }, 404);
     }
     return c.json({ ok: true, message: "Email deleted" });
+  })
+  // POST /cases for PDF upload and parsing
+  .post("/cases", requireAuth, isAdmin, async (c) => {
+    try {
+      const formData = await c.req.parseBody();
+      const file = formData["file"];
+      if (!file || !(file instanceof File)) {
+        return c.json({ ok: false, error: "No file uploaded" }, 400);
+      }
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const extractedText = await pdfParse(buffer).then((data) => data.text);
+      const doc = await CaseDocument.create({
+        filename: file.name || "uploaded.pdf",
+        originalPdf: buffer,
+        extractedText,
+      });
+      return c.json({ ok: true, id: doc._id, filename: doc.filename }, 201);
+    } catch (err) {
+      console.error(err);
+      return c.json({ ok: false, error: "Upload failed" }, 500);
+    }
+  })
+  // DELETE /cases/:id for deleting a case
+  .delete("/cases/:id", requireAuth, isAdmin, async (c) => {
+    const id = c.req.param("id");
+    if (!id || !ObjectId.isValid(id)) {
+      return c.json({ ok: false, error: "Invalid case ID" }, 400);
+    }
+    const result = await CaseDocument.findOneAndDelete({ _id: new ObjectId(id) });
+    if (!result) {
+      return c.json({ ok: false, error: "Case not found" }, 404);
+    }
+    return c.json({ ok: true, message: "Case deleted" });
+  })
+  // GET /cases to list all cases
+  .get("/cases", requireAuth, isAdmin, async (c) => {
+    const cases = await CaseDocument.find({}, {
+      _id: 1,
+      filename: 1,
+      uploadedAt: 1,
+      originalPdf: 1
+    });
+    const data = cases.map((doc) => ({
+      id: doc._id,
+      name: doc.filename,
+      size: doc.originalPdf ? (doc.originalPdf.length / 1024 / 1024).toFixed(2) + " MB" : "-",
+      uploadDate: doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "-",
+    }));
+    return c.json({ ok: true, data });
   });
 
 export default app;

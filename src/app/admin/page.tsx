@@ -8,14 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAllowedEmails, useAddAllowedEmail, useDeleteAllowedEmail } from "@/lib/api/admin";
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: string;
-  uploadDate: string;
-}
+import { useAllowedEmails, useAddAllowedEmail, useDeleteAllowedEmail, useListCases, useUploadCaseDocument, useDeleteCaseDocument } from "@/lib/api/admin";
 
 interface EmailEntry {
   id: string; // MongoDB _id
@@ -24,11 +17,13 @@ interface EmailEntry {
 }
 
 const Admin = () => {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const router = useRouter();
 
   // TanStack React Query hooks
+  const { data: casesData, refetch: refetchCases, isLoading: isCasesLoading } = useListCases();
+  const uploadCaseMutation = useUploadCaseDocument();
+  const deleteCaseMutation = useDeleteCaseDocument();
   const { data, refetch, isLoading } = useAllowedEmails();
   const addEmailMutation = useAddAllowedEmail();
   const deleteEmailMutation = useDeleteAllowedEmail();
@@ -46,16 +41,16 @@ const Admin = () => {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      Array.from(files).forEach((file) => {
+      Array.from(files).forEach(async (file) => {
         if (file.type === "application/pdf") {
-          const newFile: UploadedFile = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            name: file.name,
-            size: (file.size / 1024 / 1024).toFixed(2) + " MB",
-            uploadDate: new Date().toLocaleDateString()
-          };
-          setUploadedFiles(prev => [...prev, newFile]);
-          toast.success(`${file.name} has been successfully uploaded.`);
+          try {
+            await uploadCaseMutation.mutateAsync(file);
+            toast.success(`${file.name} has been successfully uploaded.`);
+            refetchCases();
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : "Failed to upload PDF.";
+            toast.error(errorMsg);
+          }
         } else {
           toast.error("Please upload PDF files only.");
         }
@@ -82,9 +77,15 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteFile = (id: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.id !== id));
-    toast.success("PDF file has been removed.");
+  const handleDeleteFile = async (id: string) => {
+    try {
+      await deleteCaseMutation.mutateAsync(id);
+      toast.success("PDF file has been removed.");
+      refetchCases();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete PDF.";
+      toast.error(errorMsg);
+    }
   };
 
   const handleDeleteEmail = async (email: string) => {
@@ -160,11 +161,13 @@ const Admin = () => {
               </div>
 
               {/* Uploaded Files List */}
-              {uploadedFiles.length > 0 && (
+              {isCasesLoading ? (
+                <div className="text-gray-400">Loading files...</div>
+              ) : casesData && casesData.ok && casesData.data.length > 0 ? (
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-white">Uploaded Files ({uploadedFiles.length})</h3>
+                  <h3 className="text-lg font-semibold text-white">Uploaded Files ({casesData.data.length})</h3>
                   <div className="max-h-64 overflow-y-auto space-y-2">
-                    {uploadedFiles.map((file) => (
+                    {casesData.data.map((file) => (
                       <div key={file.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg p-3">
                         <div className="flex items-center space-x-3">
                           <FileText className="h-4 w-4 text-purple-400" />
@@ -178,6 +181,7 @@ const Admin = () => {
                           variant="ghost"
                           onClick={() => handleDeleteFile(file.id)}
                           className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                          disabled={deleteCaseMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -185,6 +189,8 @@ const Admin = () => {
                     ))}
                   </div>
                 </div>
+              ) : (
+                <div className="text-gray-400">No files uploaded.</div>
               )}
             </CardContent>
           </Card>
