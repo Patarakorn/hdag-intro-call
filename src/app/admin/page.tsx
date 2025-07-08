@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAllowedEmails, useAddAllowedEmail, useDeleteAllowedEmail } from "@/lib/api/admin";
 
 interface UploadedFile {
   id: string;
@@ -17,17 +18,30 @@ interface UploadedFile {
 }
 
 interface EmailEntry {
-  id: string;
+  id: string; // MongoDB _id
   email: string;
-  name: string;
-  dateAdded: string;
+  invitedAt: string;
 }
 
 const Admin = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [emails, setEmails] = useState<EmailEntry[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const router = useRouter();
+
+  // TanStack React Query hooks
+  const { data, refetch, isLoading } = useAllowedEmails();
+  const addEmailMutation = useAddAllowedEmail();
+  const deleteEmailMutation = useDeleteAllowedEmail();
+
+  // Helper to get emails from API response
+  const emails: EmailEntry[] =
+    data?.ok && Array.isArray(data.data)
+      ? data.data.map((e: { _id: string; email: string; invitedAt?: string }) => ({
+          id: e._id,
+          email: e.email,
+          invitedAt: e.invitedAt ? new Date(e.invitedAt).toLocaleDateString() : "",
+        }))
+      : [];
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -49,24 +63,22 @@ const Admin = () => {
     }
   };
 
-  const handleAddEmail = () => {
+  const handleAddEmail = async () => {
     if (newEmail) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(newEmail)) {
         toast.error("Please enter a valid email address.");
         return;
       }
-
-      const newEmailEntry: EmailEntry = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        email: newEmail,
-        name: newEmail.split('@')[0], // Use email prefix as name
-        dateAdded: new Date().toLocaleDateString()
-      };
-
-      setEmails(prev => [...prev, newEmailEntry]);
-      setNewEmail("");
-      toast.success(`${newEmail} has been added to the database.`);
+      try {
+        await addEmailMutation.mutateAsync({ email: newEmail });
+        setNewEmail("");
+        toast.success(`${newEmail} has been added to the database.`);
+        refetch();
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Failed to add email.";
+        toast.error(errorMsg);
+      }
     }
   };
 
@@ -75,9 +87,15 @@ const Admin = () => {
     toast.success("PDF file has been removed.");
   };
 
-  const handleDeleteEmail = (id: string) => {
-    setEmails(prev => prev.filter(email => email.id !== id));
-    toast.success("Email has been removed from the database.");
+  const handleDeleteEmail = async (email: string) => {
+    try {
+      await deleteEmailMutation.mutateAsync({ email });
+      toast.success("Email has been removed from the database.");
+      refetch();
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete email.";
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -206,14 +224,15 @@ const Admin = () => {
               </div>
 
               {/* Email List */}
-              {emails.length > 0 && (
+              {isLoading ? (
+                <div className="text-gray-400">Loading emails...</div>
+              ) : emails.length > 0 ? (
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-white">Email Database ({emails.length})</h3>
                   <div className="max-h-64 overflow-y-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="border-gray-700">
-                          <TableHead className="text-gray-300">Name</TableHead>
                           <TableHead className="text-gray-300">Email</TableHead>
                           <TableHead className="text-gray-300">Date Added</TableHead>
                           <TableHead className="text-gray-300">Action</TableHead>
@@ -222,15 +241,15 @@ const Admin = () => {
                       <TableBody>
                         {emails.map((email) => (
                           <TableRow key={email.id} className="border-gray-700">
-                            <TableCell className="text-white">{email.name}</TableCell>
                             <TableCell className="text-white">{email.email}</TableCell>
-                            <TableCell className="text-gray-400">{email.dateAdded}</TableCell>
+                            <TableCell className="text-gray-400">{email.invitedAt}</TableCell>
                             <TableCell>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleDeleteEmail(email.id)}
+                                onClick={() => handleDeleteEmail(email.email)}
                                 className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                disabled={deleteEmailMutation.isPending}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -241,6 +260,8 @@ const Admin = () => {
                     </Table>
                   </div>
                 </div>
+              ) : (
+                <div className="text-gray-400">No emails found.</div>
               )}
             </CardContent>
           </Card>

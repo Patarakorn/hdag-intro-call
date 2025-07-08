@@ -18,6 +18,7 @@ const app = new Hono()
 
 export const GET = handle(app);
 export const POST = handle(app);
+export const DELETE = handle(app);
 
-// This is the type you’ll pass to `hc<AppType>(…)`
+// This is the type you'll pass to `hc<AppType>(…)`
 export type AppType = typeof app;
