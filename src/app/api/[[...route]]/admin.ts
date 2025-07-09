@@ -79,7 +79,6 @@ const app = new Hono()
       const extractedText = await pdfParse(buffer).then((data) => data.text);
       const doc = await CaseDocument.create({
         filename: file.name || "uploaded.pdf",
-        originalPdf: buffer,
         extractedText,
       });
       return c.json({ ok: true, id: doc._id, filename: doc.filename }, 201);
@@ -105,13 +104,11 @@ const app = new Hono()
     const cases = await CaseDocument.find({}, {
       _id: 1,
       filename: 1,
-      uploadedAt: 1,
-      originalPdf: 1
+      uploadedAt: 1
     });
     const data = cases.map((doc) => ({
       id: doc._id,
       name: doc.filename,
-      size: doc.originalPdf ? (doc.originalPdf.length / 1024 / 1024).toFixed(2) + " MB" : "-",
       uploadDate: doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "-",
     }));
     return c.json({ ok: true, data });

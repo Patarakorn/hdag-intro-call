@@ -173,7 +173,7 @@ const Admin = () => {
                           <FileText className="h-4 w-4 text-purple-400" />
                           <div>
                             <p className="text-sm font-medium text-white">{file.name}</p>
-                            <p className="text-xs text-gray-400">{file.size} • {file.uploadDate}</p>
+                            <p className="text-xs text-gray-400">{file.uploadDate}</p>
                           </div>
                         </div>
                         <Button
