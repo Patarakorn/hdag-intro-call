@@ -25,6 +25,19 @@ export const requireAuth = createMiddleware(async (c, next) => {
     return c.json({ ok: false, error: "Unauthorized" }, 401);
   }
 
-  // Optionally stash user on context: c.set("user", payload);
+  // Stash user on context so isAdmin can access it
+  c.set("user", payload);
+  return next();
+});
+
+export const isAdmin = createMiddleware(async (c, next) => {
+  const payload = c.get("user") as JWTPayload;
+  if (!payload || typeof payload.email !== "string") {
+    return c.json({ ok: false, error: "Unauthorized" }, 401);
+  }
+  
+  if (payload.email !== process.env.ADMIN_EMAIL) {
+    return c.json({ ok: false, error: "Forbidden" }, 403);
+  }
   return next();
 });
