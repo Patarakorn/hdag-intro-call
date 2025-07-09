@@ -5,8 +5,9 @@ import { z } from "zod";
 import { AllowedEmail } from "@/lib/models/AllowedEmail";
 import { requireAuth, isAdmin } from "@/lib/middleware/requireAuth";
 import { CaseDocument } from "@/lib/models/CaseDocument";
-import pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse"; 
 import { ObjectId } from "mongodb";
+import OpenAI from "openai";
 
 const createAllowedEmailSchema = z.object({
   email: z.string().email(),
@@ -76,10 +77,12 @@ const app = new Hono()
       }
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const extractedText = await pdfParse(buffer).then((data) => data.text);
+      const extractedText = await pdfParse(buffer).then((data: { text: string }) => data.text);
+      const vector = await getEmbedding(extractedText);
       const doc = await CaseDocument.create({
         filename: file.name || "uploaded.pdf",
         extractedText,
+        vector,
       });
       return c.json({ ok: true, id: doc._id, filename: doc.filename }, 201);
     } catch (err) {
@@ -115,3 +118,13 @@ const app = new Hono()
   });
 
 export default app;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+async function getEmbedding(text: string): Promise<number[]> {
+  const response = await openai.embeddings.create({
+    model: "text-embedding-ada-002",
+    input: text,
+  });
+  return response.data[0].embedding;
+}
