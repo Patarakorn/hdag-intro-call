@@ -1,101 +1,122 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CompanySearch } from "@/components/CompanySearch";
 import { CompanyResults } from "@/components/CompanyResults";
 import { Building2, TrendingUp, Database, LogOut, MessageCircle, PhoneOutgoing, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe } from "@/lib/api/auth";
+import { useCompanySearch } from "@/lib/api/companies";
 import { useRouter } from "next/navigation";
-
-interface CompanyInfo {
-  name: string;
-  industry: string;
-  size: string;
-  founded: string;
-  headquarters: string;
-  description: string;
-  revenue: string;
-  website: string;
-}
-
-interface PastCase {
-  title: string;
-  description: string;
-  relevanceScore: number;
-  year: string;
-}
-
-interface CompanyResultsData {
-  companyInfo: CompanyInfo;
-  analyticsPoints: string[];
-  pastCases: PastCase[];
-}
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import type { CompanyResultsData } from "@/components/CompanyResults";
 
 export default function HomeClient() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState<CompanyResultsData | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
+  const [inputValue, setInputValue] = useState<string | undefined>(undefined);
   const logout = useLogout();
   const router = useRouter();
   const { data: me } = useMe();
+  const toastRef = useRef<string | number | null>(null);
+  const queryClient = useQueryClient();
   
+  // Use the improved search hook
+  const { data: searchResult, isLoading, error, search } = useCompanySearch(searchQuery);
+
+  // Hydrate state from localStorage after mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const lastSearch = localStorage.getItem("lastCompanySearch") || "";
+      if (lastSearch) {
+        setInputValue(lastSearch);
+        setSearchQuery(lastSearch);
+        search(lastSearch);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Type the response properly to avoid explicit any
   const isAdmin = me?.ok && (me as { user: { email: string } })?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-  const handleSearch = async (companyName: string) => {
-    setIsLoading(true);
-    setSearchQuery(companyName);
-    // Simulate API call - replace with your actual API integration
-    setTimeout(() => {
-      setSearchResults({
-        companyInfo: {
-          name: companyName,
-          industry: "Technology",
-          size: "1,001-5,000 employees",
-          founded: "2008",
-          headquarters: "San Francisco, CA",
-          description: "A leading technology company focused on innovative solutions and digital transformation.",
-          revenue: "$2.1B (2023)",
-          website: "www.example.com"
-        },
-        analyticsPoints: [
-          "Large customer dataset suitable for segmentation analysis",
-          "Multi-channel sales data perfect for attribution modeling",
-          "Strong digital presence with rich web analytics opportunities",
-          "International operations providing cross-market comparison potential",
-          "Subscription-based model ideal for cohort and churn analysis"
-        ],
-        pastCases: [
-          {
-            title: "Customer Segmentation Analysis",
-            description: "Analyzed customer behavior patterns for a similar tech company",
-            relevanceScore: 95,
-            year: "2023"
-          },
-          {
-            title: "Sales Attribution Modeling",
-            description: "Multi-touch attribution analysis for B2B SaaS company",
-            relevanceScore: 88,
-            year: "2023"
-          },
-          {
-            title: "Churn Prediction Model",
-            description: "Predictive analytics for subscription-based business model",
-            relevanceScore: 82,
-            year: "2022"
-          }
-        ]
+  // Handle search errors with toast notifications
+  useEffect(() => {
+    if (error) {
+      console.error("Search error:", error);
+      // Dismiss any existing loading toast
+      if (toastRef.current) {
+        toast.dismiss(toastRef.current);
+        toastRef.current = null;
+      }
+      toast.error("Failed to fetch company data", {
+        description: "Please try again later or check your internet connection.",
+        duration: 5000,
       });
-      setIsLoading(false);
-    }, 1500);
+    }
+  }, [error]);
+
+  const handleSearch = (companyName: string) => {
+    setSearchQuery(companyName);
+    setInputValue(companyName);
+    search(companyName);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lastCompanySearch", companyName);
+    }
   };
+
+  // Extract search results from the query response
+  const searchResults = (searchResult && typeof searchResult === 'object' && 'ok' in searchResult && searchResult.ok && 'data' in searchResult)
+    ? (searchResult as { ok: true; data: CompanyResultsData }).data
+    : null;
+
+  // Show success toast when search completes
+  useEffect(() => {
+    if (searchResults && searchQuery) {
+      // Dismiss any existing loading toast
+      if (toastRef.current) {
+        toast.dismiss(toastRef.current);
+        toastRef.current = null;
+      }
+      toast.success("Company data retrieved successfully", {
+        duration: 3000,
+      });
+    }
+  }, [searchResults, searchQuery]);
+
+  // Show loading toast for long searches
+  useEffect(() => {
+    if (isLoading && searchQuery) {
+      toastRef.current = toast.loading("Searching for company data...", {
+        duration: Infinity, // Will be dismissed manually
+      });
+    }
+  }, [isLoading, searchQuery]);
+
+  // Dismiss loading toast when search completes
+  useEffect(() => {
+    if (!isLoading && searchQuery) {
+      toast.dismiss(); // Dismiss any loading toasts
+    }
+  }, [isLoading, searchQuery]);
 
   const handleSignOut = async () => {
     try {
       await logout.mutateAsync();
+      // Clear localStorage and React Query cache
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("lastCompanySearch");
+        localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
+      }
+      queryClient.clear();
+      setSearchQuery(undefined); // reset state to undefined
+      setInputValue(undefined); // reset state to undefined
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error("Logout failed", {
+        description: "Please try again.",
+        duration: 3000,
+      });
     }
   };
 
@@ -177,14 +198,14 @@ export default function HomeClient() {
             </div>
             {/* Search Section */}
             <div className="mb-8">
-              <CompanySearch onSearch={handleSearch} isLoading={isLoading} />
+              <CompanySearch onSearch={handleSearch} isLoading={isLoading} setInputValue={setInputValue} inputValue={inputValue ?? ""} />
             </div>
             {/* Results Section */}
             {(searchResults || isLoading) && (
               <CompanyResults 
-                results={searchResults} 
+                results={searchResults as CompanyResultsData | null} 
                 isLoading={isLoading}
-                searchQuery={searchQuery}
+                searchQuery={searchQuery ?? ""}
               />
             )}
           </div>
