@@ -25,7 +25,7 @@ export default function HomeClient() {
 
   // Hydrate state from localStorage after mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && me?.ok) {
       const lastSearch = localStorage.getItem("lastCompanySearch") || "";
       if (lastSearch) {
         setInputValue(lastSearch);
@@ -34,7 +34,7 @@ export default function HomeClient() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [me?.ok]);
 
   // Type the response properly to avoid explicit any
   const isAdmin = me?.ok && (me as { user: { email: string } })?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -94,22 +94,27 @@ export default function HomeClient() {
 
   // Dismiss loading toast when search completes
   useEffect(() => {
-    if (!isLoading && searchQuery) {
-      toast.dismiss(); // Dismiss any loading toasts
+    if (!isLoading && searchQuery && toastRef.current) {
+      toast.dismiss(toastRef.current);
+      toastRef.current = null;
     }
   }, [isLoading, searchQuery]);
 
   const handleSignOut = async () => {
     try {
+      // Clear state immediately to prevent any new API calls
+      setSearchQuery(undefined);
+      setInputValue(undefined);
+      
       await logout.mutateAsync();
+      
       // Clear localStorage and React Query cache
       if (typeof window !== "undefined") {
         localStorage.removeItem("lastCompanySearch");
         localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
       }
       queryClient.clear();
-      setSearchQuery(undefined); // reset state to undefined
-      setInputValue(undefined); // reset state to undefined
+      
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);

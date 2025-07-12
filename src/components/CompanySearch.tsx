@@ -39,7 +39,7 @@ export const CompanySearch = ({ onSearch, isLoading, setInputValue, inputValue: 
     <div className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 z-10" />
           <Input
             type="text"
             placeholder="Enter company name (e.g., Apple, Microsoft, Tesla...)"

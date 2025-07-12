@@ -1,7 +1,7 @@
 import { client } from "@/lib/hono";
 import { useQuery } from "@tanstack/react-query";
 import type { InferResponseType } from "hono";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 type SearchCompanyRes = InferResponseType<typeof client.api.companies.search.$get>;
 
@@ -13,9 +13,6 @@ export function useSearchCompany(companyName: string | null) {
       if (!companyName) {
         return { ok: false } as SearchCompanyRes;
       }
-      
-      // Debug log to track API calls
-      console.log(`🔍 Making API call for: ${companyName}`);
       
       const response = await client.api.companies.search.$get({
         query: { q: companyName }
@@ -31,7 +28,7 @@ export function useSearchCompany(companyName: string | null) {
     staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh for 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes - cache for 10 minutes
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    refetchOnMount: false, // Don't refetch when component mounts if data exists
+    refetchOnMount: true, // Allow refetch on mount to show cached data
     refetchOnReconnect: false, // Don't refetch on network reconnect
   });
 }
@@ -45,15 +42,15 @@ export function useCompanySearch(initialSearchTerm?: string) {
   
   const search = useCallback((companyName: string) => {
     const trimmedName = companyName.trim();
-    if (!trimmedName) return;
-    
-    // Prevent duplicate searches
-    if (trimmedName === lastSearched) {
-      console.log(`🚫 Skipping duplicate search for: ${trimmedName}`);
+    if (!trimmedName) {
       return;
     }
     
-    console.log(`✅ Initiating new search for: ${trimmedName}`);
+    // Prevent duplicate searches
+    if (trimmedName === lastSearched) {
+      return;
+    }
+    
     setLastSearched(trimmedName);
     setSearchTerm(trimmedName);
   }, [lastSearched]);
@@ -62,6 +59,7 @@ export function useCompanySearch(initialSearchTerm?: string) {
     ...query,
     search,
     searchTerm,
-    lastSearched
+    lastSearched,
+    isLoading: query.isLoading || query.isFetching
   };
 } 
