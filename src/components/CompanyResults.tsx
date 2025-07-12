@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyInfoCard } from "@/components/CompanyInfoCard";
 import { AnalyticsPointsCard } from "@/components/AnalyticsPointsCard";
-import { PastCasesCard } from "@/components/PastCasesCard";
+import { SimilarCasesCard } from "@/components/SimilarCasesCard";
 
 interface CompanyInfo {
   name: string;
@@ -14,17 +14,14 @@ interface CompanyInfo {
   website: string;
 }
 
-interface PastCase {
-  title: string;
+interface AnalyticsPoint {
+  header: string;
   description: string;
-  relevanceScore: number;
-  year: string;
 }
 
-interface CompanyResultsData {
+export interface CompanyResultsData {
   companyInfo: CompanyInfo;
-  analyticsPoints: string[];
-  pastCases: PastCase[];
+  analyticsPoints: AnalyticsPoint[];
 }
 
 interface CompanyResultsProps {
@@ -64,6 +61,9 @@ export const CompanyResults = ({ results, isLoading, searchQuery }: CompanyResul
     return null;
   }
 
+  // Create optimized company info string for similarity search
+  const companyInfoString = `${results.companyInfo.name} - ${results.companyInfo.industry} industry, ${results.companyInfo.size} company founded in ${results.companyInfo.founded}, headquartered in ${results.companyInfo.headquarters}. ${results.companyInfo.description}`;
+
   return (
     <div className="space-y-8">
       {/* Results Header */}
@@ -79,7 +79,7 @@ export const CompanyResults = ({ results, isLoading, searchQuery }: CompanyResul
       <div className="grid gap-8 lg:grid-cols-3">
         <CompanyInfoCard companyInfo={results.companyInfo} />
         <AnalyticsPointsCard analyticsPoints={results.analyticsPoints} />
-        <PastCasesCard pastCases={results.pastCases} />
+        <SimilarCasesCard companyInfo={companyInfoString} />
       </div>
     </div>
   );
