@@ -25,13 +25,22 @@ export default function HomeClient() {
 
   // Hydrate state from localStorage after mount
   useEffect(() => {
-    if (typeof window !== "undefined" && me?.ok) {
-      const lastSearch = localStorage.getItem("lastCompanySearch") || "";
-      if (lastSearch) {
-        setInputValue(lastSearch);
-        setSearchQuery(lastSearch);
-        search(lastSearch);
+    if (typeof window !== "undefined") {
+      if (me?.ok) {
+        // Only restore last search if session is valid
+        const lastSearch = localStorage.getItem("lastCompanySearch") || "";
+        if (lastSearch) {
+          setInputValue(lastSearch);
+          setSearchQuery(lastSearch);
+          search(lastSearch);
+        }
+      } else if (me?.ok === false) {
+        // If session is invalid, clear all relevant storage and cache
+        localStorage.removeItem("lastCompanySearch");
+        localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
+        queryClient.clear(); // <-- Make sure to clear React Query cache too!
       }
+      // If me is undefined (loading), do nothing
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.ok]);
@@ -105,17 +114,18 @@ export default function HomeClient() {
       // Clear state immediately to prevent any new API calls
       setSearchQuery(undefined);
       setInputValue(undefined);
-      
+
       await logout.mutateAsync();
-      
-      // Clear localStorage and React Query cache
+
+      // Clear localStorage and React Query cache BEFORE redirect
       if (typeof window !== "undefined") {
         localStorage.removeItem("lastCompanySearch");
         localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
       }
       queryClient.clear();
-      
-      router.push("/login");
+
+      // Use await to ensure navigation happens after clearing
+      await router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Logout failed", {

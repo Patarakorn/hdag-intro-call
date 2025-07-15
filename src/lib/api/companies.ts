@@ -1,7 +1,7 @@
 import { client } from "@/lib/hono";
 import { useQuery } from "@tanstack/react-query";
 import type { InferResponseType } from "hono";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 
 type SearchCompanyRes = InferResponseType<typeof client.api.companies.search.$get>;
 
