@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { CompanySearch } from "@/components/CompanySearch";
 import { CompanyResults } from "@/components/CompanyResults";
-import { Building2, TrendingUp, Database, LogOut, MessageCircle, PhoneOutgoing, Users } from "lucide-react";
+import { Building2, TrendingUp, Database, LogOut, PhoneOutgoing, Users, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe } from "@/lib/api/auth";
 import { useCompanySearch } from "@/lib/api/companies";
@@ -152,12 +152,12 @@ export default function HomeClient() {
             </div>
             <div className="flex items-center gap-4">
               <Button
-                onClick={() => router.push("/chat")}
+                onClick={() => router.push("/instructions")}
                 variant="outline"
                 className="bg-purple-900/30 border-purple-600 text-purple-300 hover:bg-purple-700/40 hover:text-white hover:border-purple-400 transition-colors"
               >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Ask Questions
+                <Info className="h-4 w-4 mr-2" />
+                Instructions
               </Button>
               {isAdmin && (
                 <Button
