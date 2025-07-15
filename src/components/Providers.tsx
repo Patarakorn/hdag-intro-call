@@ -12,8 +12,8 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: 60 * 60 * 1000, // 1 hour
+        gcTime: 60 * 60 * 1000, // 1 hour
         refetchOnWindowFocus: false,
         refetchOnMount: true, // Allow refetch on mount to show cached data
         refetchOnReconnect: false,
@@ -31,7 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
       persistQueryClient({
         queryClient,
         persister: localStoragePersister,
-        maxAge: 1 * 60 * 60 * 1000, // 1 hour
+        maxAge: 60 * 60 * 1000, // 1 hour
       });
     }
   }, [queryClient]);
